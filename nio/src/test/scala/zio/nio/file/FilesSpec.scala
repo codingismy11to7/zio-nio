@@ -20,12 +20,14 @@ object FilesSpec extends BaseSpec {
         val sampleFileContent = Chunk.fromArray("createTempFileInManaged works!".getBytes)
         for {
           pathRef <- Ref.make[Option[Path]](None)
-          readBytes <- Files
-                         .createTempFileInManaged(dir = Path("."))
-                         .use { tmpFile =>
-                           pathRef.set(Some(tmpFile)) *> writeAndThenRead(tmpFile)(sampleFileContent)
-                         }
-          Some(tmpFilePath)       <- pathRef.get
+          readBytes <- ZIO.scoped {
+                         Files
+                           .createTempFileInManaged(dir = Path("."))
+                           .flatMap { tmpFile =>
+                             pathRef.set(Some(tmpFile)) *> writeAndThenRead(tmpFile)(sampleFileContent)
+                           }
+                       }
+          tmpFilePath             <- pathRef.get.some
           tmpFileExistsAfterUsage <- Files.exists(tmpFilePath)
         } yield assert(readBytes)(equalTo(sampleFileContent)) &&
           assert(tmpFileExistsAfterUsage)(isFalse)
@@ -34,12 +36,14 @@ object FilesSpec extends BaseSpec {
         val sampleFileContent = Chunk.fromArray("createTempFileManaged works!".getBytes)
         for {
           pathRef <- Ref.make[Option[Path]](None)
-          readBytes <- Files
-                         .createTempFileManaged()
-                         .use { tmpFile =>
-                           pathRef.set(Some(tmpFile)) *> writeAndThenRead(tmpFile)(sampleFileContent)
-                         }
-          Some(tmpFilePath)       <- pathRef.get
+          readBytes <- ZIO.scoped {
+                         Files
+                           .createTempFileManaged()
+                           .flatMap { tmpFile =>
+                             pathRef.set(Some(tmpFile)) *> writeAndThenRead(tmpFile)(sampleFileContent)
+                           }
+                       }
+          tmpFilePath             <- pathRef.get.some
           tmpFileExistsAfterUsage <- Files.exists(tmpFilePath)
         } yield assert(readBytes)(equalTo(sampleFileContent)) &&
           assert(tmpFileExistsAfterUsage)(isFalse)
@@ -48,16 +52,18 @@ object FilesSpec extends BaseSpec {
         val sampleFileContent = Chunk.fromArray("createTempDirectoryManaged works!".getBytes)
         for {
           pathRef <- Ref.make[Option[Path]](None)
-          readBytes <- Files
-                         .createTempDirectoryManaged(
-                           prefix = None,
-                           fileAttributes = Nil
-                         )
-                         .use { tmpDir =>
-                           val sampleFile = tmpDir / "createTempDirectoryManaged"
-                           pathRef.set(Some(tmpDir)) *> createAndWriteAndThenRead(sampleFile)(sampleFileContent)
-                         }
-          Some(tmpFilePath)       <- pathRef.get
+          readBytes <- ZIO.scoped {
+                         Files
+                           .createTempDirectoryManaged(
+                             prefix = None,
+                             fileAttributes = Nil
+                           )
+                           .flatMap { tmpDir =>
+                             val sampleFile = tmpDir / "createTempDirectoryManaged"
+                             pathRef.set(Some(tmpDir)) *> createAndWriteAndThenRead(sampleFile)(sampleFileContent)
+                           }
+                       }
+          tmpFilePath             <- pathRef.get.some
           tmpFileExistsAfterUsage <- Files.exists(tmpFilePath)
         } yield assert(readBytes)(equalTo(sampleFileContent)) &&
           assert(tmpFileExistsAfterUsage)(isFalse)
@@ -66,17 +72,19 @@ object FilesSpec extends BaseSpec {
         val sampleFileContent = Chunk.fromArray("createTempDirectoryManaged(dir) works!".getBytes)
         for {
           pathRef <- Ref.make[Option[Path]](None)
-          readBytes <- Files
-                         .createTempDirectoryManaged(
-                           dir = Path("."),
-                           prefix = None,
-                           fileAttributes = Nil
-                         )
-                         .use { tmpDir =>
-                           val sampleFile = tmpDir / "createTempDirectoryManaged2"
-                           pathRef.set(Some(tmpDir)) *> createAndWriteAndThenRead(sampleFile)(sampleFileContent)
-                         }
-          Some(tmpFilePath)       <- pathRef.get
+          readBytes <- ZIO.scoped {
+                         Files
+                           .createTempDirectoryManaged(
+                             dir = Path("."),
+                             prefix = None,
+                             fileAttributes = Nil
+                           )
+                           .flatMap { tmpDir =>
+                             val sampleFile = tmpDir / "createTempDirectoryManaged2"
+                             pathRef.set(Some(tmpDir)) *> createAndWriteAndThenRead(sampleFile)(sampleFileContent)
+                           }
+                       }
+          tmpFilePath             <- pathRef.get.some
           tmpFileExistsAfterUsage <- Files.exists(tmpFilePath)
         } yield assert(readBytes)(equalTo(sampleFileContent)) &&
           assert(tmpFileExistsAfterUsage)(isFalse)

@@ -1,11 +1,10 @@
 package zio.nio
 package channels
 
-import zio.stacktracer.TracingImplicits.disableAutoTrace
-import zio.{IO, Managed, UIO, ZTraceElement}
+import zio.{IO, Scope, UIO, ZIO, ZTraceElement}
 
 import java.io.IOException
-import java.net.{DatagramSocket => JDatagramSocket, ProtocolFamily, SocketAddress => JSocketAddress, SocketOption}
+import java.net.{ProtocolFamily, SocketOption, DatagramSocket => JDatagramSocket, SocketAddress => JSocketAddress}
 import java.nio.channels.{DatagramChannel => JDatagramChannel}
 
 /**
@@ -162,12 +161,12 @@ object DatagramChannel {
    * @return
    *   a new datagram channel
    */
-  def open(implicit trace: ZTraceElement): Managed[IOException, DatagramChannel] =
+  def open(implicit trace: ZTraceElement): ZIO[Scope, IOException, DatagramChannel] =
     IO.attempt(new DatagramChannel(JDatagramChannel.open()))
       .refineToOrDie[IOException]
       .toNioManaged
 
-  def open(family: ProtocolFamily)(implicit trace: ZTraceElement): Managed[IOException, DatagramChannel] =
+  def open(family: ProtocolFamily)(implicit trace: ZTraceElement): ZIO[Scope, IOException, DatagramChannel] =
     IO.attempt {
       val javaChannel = JDatagramChannel.open(family)
       javaChannel.configureBlocking(false)

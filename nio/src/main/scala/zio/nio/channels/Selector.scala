@@ -3,8 +3,7 @@ package channels
 
 import com.github.ghik.silencer.silent
 import zio.nio.channels.spi.SelectorProvider
-import zio.stacktracer.TracingImplicits.disableAutoTrace
-import zio.{Duration, IO, Managed, UIO, ZIO, ZTraceElement}
+import zio.{Duration, IO, Scope, UIO, ZIO, ZTraceElement}
 
 import java.io.IOException
 import java.nio.channels.{SelectionKey => JSelectionKey, Selector => JSelector}
@@ -143,7 +142,7 @@ object Selector {
   /**
    * Opens a selector.
    */
-  def open(implicit trace: ZTraceElement): Managed[IOException, Selector] =
+  def open(implicit trace: ZTraceElement): ZIO[Scope, IOException, Selector] =
     IO.attempt(new Selector(JSelector.open())).refineToOrDie[IOException].toNioManaged
 
 }

@@ -5,7 +5,7 @@ package charset
 import zio.stacktracer.TracingImplicits.disableAutoTrace
 import zio.stream.{ZChannel, ZPipeline}
 
-import java.nio.charset.{MalformedInputException, UnmappableCharacterException}
+import java.nio.charset.{CharacterCodingException, MalformedInputException, UnmappableCharacterException}
 import java.nio.{charset => j}
 
 /**
@@ -72,11 +72,11 @@ final class CharsetEncoder private (val javaEncoder: j.CharsetEncoder) extends A
   def transducer(
     bufSize: Int = 5000
   )(implicit trace: ZTraceElement): ZPipeline[Any, j.CharacterCodingException, Char, Byte] = {
-    val push: UManaged[Option[Chunk[Char]] => IO[j.CharacterCodingException, Chunk[Byte]]] = {
+    val push: UIO[Option[Chunk[Char]] => IO[j.CharacterCodingException, Chunk[Byte]]] = {
       for {
-        _          <- reset.toManaged
-        charBuffer <- Buffer.char((bufSize.toFloat / this.averageBytesPerChar).round).toManaged
-        byteBuffer <- Buffer.byte(bufSize).toManaged
+        _          <- reset
+        charBuffer <- Buffer.char((bufSize.toFloat / this.averageBytesPerChar).round)
+        byteBuffer <- Buffer.byte(bufSize)
       } yield {
 
         def handleCoderResult(coderResult: CoderResult) =

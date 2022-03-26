@@ -1,9 +1,7 @@
 package zio.nio.channels
 
 import zio._
-import zio.nio.Buffer.byteFromJava
 import zio.nio.{Buffer, ByteBuffer}
-import zio.stacktracer.TracingImplicits.disableAutoTrace
 import zio.stream.{ZSink, ZStream}
 
 import java.io.IOException
@@ -73,8 +71,8 @@ trait GatheringByteOps {
   )(implicit trace: ZTraceElement): ZSink[Clock, IOException, Byte, Byte, Long] =
     ZSink.fromPush {
       for {
-        buffer   <- bufferConstruct.toManaged
-        countRef <- Ref.makeManaged(0L)
+        buffer   <- bufferConstruct
+        countRef <- Ref.make(0L)
       } yield (_: Option[Chunk[Byte]]).map { chunk =>
         def doWrite(total: Int, c: Chunk[Byte])(implicit trace: ZTraceElement): ZIO[Clock, IOException, Int] = {
           val x = for {

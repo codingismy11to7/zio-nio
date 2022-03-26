@@ -3,7 +3,7 @@ package nio
 package examples
 
 import zio._
-import zio.nio.channels.{ManagedBlockingNioOps, ServerSocketChannel, SocketChannel}
+import zio.nio.channels._
 import zio.nio.charset.Charset
 import zio.stream._
 
@@ -54,7 +54,7 @@ object ToUppercaseAsAService extends ZIOAppDefault {
 
     portEff
       .flatMap(port =>
-        ServerSocketChannel.open.useNioBlocking { (serverChannel, ops) =>
+        useNioBlocking(ServerSocketChannel.open) { (serverChannel, ops) =>
           InetSocketAddress.wildCard(port).flatMap { socketAddress =>
             serverChannel.bindTo(socketAddress) *>
               Console.printLine(s"Listening on $socketAddress") *>

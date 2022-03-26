@@ -2,10 +2,12 @@ package zio
 package nio
 package examples
 
-import zio.nio.channels.{FileChannel, ManagedBlockingNioOps}
+import zio.nio.channels._
 import zio.nio.charset.Charset
 import zio.nio.file.Path
 import zio.stream.ZStream
+
+import java.io.IOException
 
 /**
  * Dumps a text file to the console using a specified encoding.
@@ -35,16 +37,16 @@ object TextFileDump extends ZIOAppDefault {
 
   private def dump(charset: Charset, file: Path)(implicit
     trace: ZTraceElement
-  ): ZIO[Console with Any, Exception, Unit] =
-    FileChannel.open(file).useNioBlockingOps { fileOps =>
-      val inStream: ZStream[Any, Exception, Byte] = ZStream.repeatZIOChunkOption {
+  ): ZIO[Console, Exception, Unit] =
+    useNioBlockingOps(FileChannel.open(file)) { fileOps =>
+      val inStream: ZStream[Any, IOException, Byte] = ZStream.repeatZIOChunkOption {
         fileOps.readChunk(1000).asSomeError.flatMap { chunk =>
           if (chunk.isEmpty) ZIO.fail(None) else ZIO.succeed(chunk)
         }
       }
 
       // apply decoding pipeline
-      val charStream: ZStream[Any, Exception, Char] =
+      val charStream: ZStream[Any, IOException, Char] =
         inStream.via(charset.newDecoder.transducer())
 
       charStream.runForeachChunk(chars => Console.print(chars.mkString))

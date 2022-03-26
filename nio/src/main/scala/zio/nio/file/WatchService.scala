@@ -2,13 +2,12 @@ package zio.nio.file
 
 import zio._
 import zio.nio.IOCloseable
-import zio.stacktracer.TracingImplicits.disableAutoTrace
 import zio.stream.ZStream
 
 import java.io.IOException
 import java.nio.file.{
-  Path => JPath,
   WatchEvent,
+  Path => JPath,
   WatchKey => JWatchKey,
   WatchService => JWatchService,
   Watchable => JWatchable
@@ -68,8 +67,8 @@ final class WatchKey private[file] (private val javaKey: JWatchKey) {
    * This does not block, it will immediately return an empty list if there are no events pending. When the returned
    * `Managed` completed, this key will be '''reset'''.
    */
-  def pollEventsManaged(implicit trace: ZTraceElement): Managed[Nothing, List[WatchEvent[_]]] =
-    pollEvents.toManaged.ensuring(reset)
+  def pollEventsManaged(implicit trace: ZTraceElement): URIO[Scope, List[WatchEvent[_]]] =
+    pollEvents.withFinalizer(reset)
 
   /**
    * Resets this watch key, making it eligible to be re-queued in the `WatchService`. A key is typically reset after all
@@ -161,7 +160,7 @@ final class WatchService private (private[file] val javaWatchService: JWatchServ
 
 object WatchService {
 
-  def forDefaultFileSystem(implicit trace: ZTraceElement): ZManaged[Any, IOException, WatchService] =
+  def forDefaultFileSystem(implicit trace: ZTraceElement): ZIO[Scope, IOException, WatchService] =
     FileSystem.default.newWatchService
 
   def fromJava(javaWatchService: JWatchService): WatchService = new WatchService(javaWatchService)
