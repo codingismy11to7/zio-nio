@@ -1,9 +1,12 @@
 package zio.nio.file
 
 import zio.nio.BaseSpec
+import zio.nio.file.Files.Attributes
 import zio.test.Assertion._
 import zio.test._
-import zio.{Chunk, Clock, Random, Ref}
+import zio.{Chunk, Clock, Random, Ref, ZIO}
+
+import java.io.IOException
 
 object FilesSpec extends BaseSpec {
 
@@ -77,6 +80,16 @@ object FilesSpec extends BaseSpec {
           tmpFileExistsAfterUsage <- Files.exists(tmpFilePath)
         } yield assert(readBytes)(equalTo(sampleFileContent)) &&
           assert(tmpFileExistsAfterUsage)(isFalse)
+      },
+      test("readAttributes works") {
+        for {
+          file       <- ZIO.succeed(Path("nio/src/test/resources/async_file_read_test.txt"))
+          attributes <- ZIO.succeed(Attributes.fromJava("size")).someOrFail(new IOException("fromJava issue"))
+          attrs      <- Files.readAttributes(file, attributes)
+          size        = Long unbox attrs("size")
+        } yield {
+          assert(size)(equalTo(11L))
+        }
       }
     )
 
